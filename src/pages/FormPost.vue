@@ -42,68 +42,58 @@
   </q-page>
 </template>
 
-<script>
-import postsService from "src/services/posts";
-import { defineComponent, ref, onMounted } from "vue";
+<script setup>
+import { usePostStore } from "src/stores/post-store";
+import { ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useQuasar } from "quasar";
 
-export default defineComponent({
-  name: "FormPost",
-  setup() {
-    const { post, getById, update } = postsService();
-    const router = useRouter();
-    const $q = useQuasar();
-    const route = useRoute();
-    const form = ref({
-      title: "",
-      content: "",
-      author: "",
-    });
+const postStore = usePostStore();
 
-    onMounted(async () => {
-      if (route.params.id) {
-        // const response = await getById(route.params.id);
-        // console.log(response);
-        getPost(route.params.id);
-      }
-    });
-
-    const getPost = async (id) => {
-      try {
-        const response = await getById(id);
-        form.value = response;
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    const onSubmit = async () => {
-      try {
-        if (form.value.id) {
-          await update(form.value);
-        } else {
-          await post(form.value);
-        }
-        $q.notify({
-          message: "Data Berhasil Disimpan",
-          icon: "check",
-          color: "positive",
-        });
-        router.push({ name: "home" });
-      } catch (error) {
-        $q.notify({
-          message: "Data Gagal Ditambah",
-          icon: "check",
-          color: "negative",
-        });
-      }
-    };
-
-    return {
-      form,
-      onSubmit,
-    };
-  },
+const router = useRouter();
+const $q = useQuasar();
+const route = useRoute();
+const form = ref({
+  title: "",
+  content: "",
+  author: "",
 });
+
+onMounted(async () => {
+  if (route.params.id) {
+    getPost(route.params.id);
+  }
+});
+
+const getPost = async (id) => {
+  try {
+    const res = await postStore.getById(id);
+    form.value = res.data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const onSubmit = async () => {
+  try {
+    if (form.value.id) {
+      await postStore.update(form.value);
+    } else {
+      await postStore.post(form.value);
+    }
+
+    $q.notify({
+      message: "Data Berhasil Disimpan",
+      icon: "check",
+      color: "positive",
+    });
+    router.push({ name: "home" });
+  } catch (error) {
+    $q.notify({
+      message: "Data Gagal Ditambah",
+      icon: "check",
+      color: "negative",
+    });
+  }
+};
 </script>

@@ -27,92 +27,80 @@
   </q-page>
 </template>
 
-<script>
-import { defineComponent, ref, onMounted } from "vue";
-import postsService from "src/services/posts";
+<script setup>
 import { useQuasar } from "quasar";
+import { usePostStore } from "src/stores/post-store";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
-export default defineComponent({
-  name: "IndexPage",
-  setup() {
-    const posts = ref([]);
-    const { list, remove } = postsService();
-    const $q = useQuasar();
-    const router = useRouter();
-    const columns = [
-      { name: "id", field: "id", label: "Id", sortable: true, align: "left" },
-      {
-        name: "title",
-        field: "title",
-        label: "Title",
-        sortable: true,
-        align: "left",
-      },
-      {
-        name: "author",
-        field: "author",
-        label: "Auhtor",
-        sortable: true,
-        align: "left",
-      },
-      {
-        name: "actions",
-        field: "actions",
-        label: "Actions",
-        sortable: true,
-        align: "right",
-      },
-    ];
+const postStore = usePostStore();
+const $q = useQuasar();
+const router = useRouter();
+const posts = ref([]);
+const columns = [
+  { name: "id", field: "id", label: "Id", sortable: true, align: "left" },
+  {
+    name: "title",
+    field: "title",
+    label: "Title",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "author",
+    field: "author",
+    label: "Auhtor",
+    sortable: true,
+    align: "left",
+  },
+  {
+    name: "actions",
+    field: "actions",
+    label: "Actions",
+    sortable: true,
+    align: "right",
+  },
+];
 
-    onMounted(() => {
+onMounted(() => {
+  getPosts();
+});
+
+const getPosts = async () => {
+  try {
+    const res = await postStore.list();
+    posts.value = res.data;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const handleEditPost = (id) => {
+  router.push({ name: "formPost", params: { id } });
+};
+
+const handleDeletePost = async (id) => {
+  try {
+    $q.dialog({
+      title: "Hapus Data",
+      message: "Apakah yakin data akan dihapus",
+      cancel: true,
+      persistent: true,
+    }).onOk(async () => {
+      await postStore.remove(id);
+      $q.notify({
+        message: "Data Berhasil Dihapus",
+        icon: "check",
+        color: "positive",
+      });
       getPosts();
     });
-
-    const getPosts = async () => {
-      try {
-        const data = await list();
-        posts.value = data;
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    const handleDeletePost = async (id) => {
-      try {
-        $q.dialog({
-          title: "Hapus Data",
-          message: "Apakah yakin data akan dihapus",
-          cancel: true,
-          persistent: true,
-        }).onOk(async () => {
-          await remove(id);
-          $q.notify({
-            message: "Data Berhasil Dihapus",
-            icon: "check",
-            color: "positive",
-          });
-          getPosts();
-        });
-      } catch (error) {
-        $q.notify({
-          message: "Data Gagal Dihapus",
-          icon: "check",
-          color: "negative",
-        });
-      }
-    };
-
-    const handleEditPost = (id) => {
-      router.push({ name: "formPost", params: { id } });
-    };
-
-    return {
-      posts,
-      columns,
-      handleDeletePost,
-      handleEditPost,
-    };
-  },
-});
+  } catch (error) {
+    $q.notify({
+      message: "Data Gagal Dihapus",
+      icon: "check",
+      color: "negative",
+    });
+  }
+};
 </script>
